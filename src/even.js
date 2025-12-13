@@ -7,6 +7,6 @@ export const initEvents = () => {
 
     loginBtn.addEventListener("click", () => {
         console.log("sang");
-        alert("Đã click được: sang");
+        alert(" sang");
     })
 };
