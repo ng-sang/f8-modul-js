@@ -1,66 +1,74 @@
-export const Header = () => {
-  return `
-    <header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 py-3 bg-black text-white h-16 font-sans border-b border-[#212121]">
-      
-      <!-- --- Phần bên trái: Menu và Logo --- -->
-      <div class="flex items-center gap-4">
-        <!-- Nút Hamburger Menu -->
-        <button class="p-2 hover:bg-white/10 rounded-full transition">
-          <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
-            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path>
-          </svg>
+import { auth } from './api.js';
+
+// Hàm Header nhận vào tham số user (có thể null)
+export const Header = (user) => {
+  
+  // Logic hiển thị phần bên phải
+  let rightSectionHtml;
+
+  if (user) {
+    // ĐÃ ĐĂNG NHẬP: Hiển thị Avatar (chữ cái đầu tên)
+    const firstLetter = user.name.charAt(0).toUpperCase();
+    rightSectionHtml = `
+      <div class="relative group ml-2">
+        <!-- Avatar Button -->
+        <button class="flex h-9 w-9 items-center justify-center rounded-full bg-purple-600 font-bold text-white border border-red-400 hover:bg-purple-500">
+          ${firstLetter}
         </button>
 
-        <!-- Logo YouTube Music -->
-        <a href="/" class="flex items-center gap-1" title="YouTube Music Home">
-          <div class="w-8 h-8 relative flex items-center justify-center">
-            <img src="img/logo.png">
+        <!-- Dropdown Menu  -->
+        <div class="absolute right-0 top-[35px] hidden w-60 rounded-lg bg-[#282828] py-2 shadow-xl group-hover:block border border-white/10">
+          <div class="px-4 py-3 border-b border-white/10">
+            <p class="text-sm font-bold text-white truncate">${user.name}</p>
+            <p class="text-xs text-gray-400 truncate">${user.email}</p>
           </div>
-          <span class="text-xl font-bold tracking-tighter" style="letter-spacing: -1px;">Music</span>
+          
+          <button id="btn-edit-profile" class="w-full px-4 py-2 text-left text-sm text-gray-200 hover:bg-[#3E3E3E]">
+            Chỉnh sửa hồ sơ
+          </button>
+          
+          <button id="btn-logout" class="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-[#3E3E3E]">
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    `;
+  } else {
+    // CHƯA ĐĂNG NHẬP: Hiển thị nút Login
+    rightSectionHtml = `
+      <button id="btn-login-popup" class="ml-2 flex items-center rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black hover:bg-[#d9d9d9]">
+        Đăng nhập
+      </button>
+    `;
+  }
+
+  // --- RETURN HTML STRING ---
+  return `
+    <header class="fixed top-0 z-50 flex h-16 w-full items-center justify-between border-b border-white/10 bg-[#030303] px-4">
+      
+      <!-- Left: Logo -->
+      <div class="flex min-w-[180px] items-center gap-4">
+        <button class="flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10">
+          <svg class="h-6 w-6 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"></path></svg>
+        </button>
+        <a href="/" class="flex items-center gap-1 text-white">
+          
+           <img src="img/logo.png" class="flex h-6 w-6 items-center justify-center rounded-full  " />
+          <span class="text-xl font-bold tracking-tighter">Music</span>
         </a>
       </div>
 
-      <!-- --- Phần giữa: Thanh tìm kiếm --- -->
-      <div class="flex-1 max-w-xl mx-4 hidden md:block">
-        <div class="flex items-center bg-[#212121] rounded-lg px-3 py-2 border border-transparent focus-within:border-white/30 transition-all">
-          <!-- Icon kính lúp -->
-          <svg class="w-6 h-6 text-gray-400 min-w-[24px]" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
-          </svg>
-          
-          <!-- Input tìm kiếm -->
-          <input 
-            type="text" 
-            placeholder="Tìm bài hát, đĩa nhạc, nghệ sĩ" 
-            class="bg-transparent border-none outline-none text-white w-full ml-3 placeholder-[#909090] text-[16px] font-medium"
-          />
+      <!-- Center: Search -->
+      <div class="flex flex-1 justify-center px-4 max-w-[640px]">
+        <div class="group flex h-10 w-full items-center rounded-lg border border-white/10 bg-[#212121] px-3 transition-colors focus-within:border-white/30 focus-within:bg-black hover:bg-[#2b2b2b]">
+          <svg class="mr-3 h-6 w-6 text-gray-400" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path></svg>
+          <input type="text" placeholder="Tìm bài hát, đĩa nhạc, nghệ sĩ" class="w-full bg-transparent text-base text-white placeholder-gray-500 outline-none"/>
         </div>
       </div>
 
-      <!-- --- Phần bên phải: Các nút chức năng --- -->
-      <div class="flex items-center gap-1 sm:gap-4">
-        
-        <!-- Nút Cast -->
-        <button class="p-2 hover:bg-white/10 rounded-full transition hidden sm:block">
-  <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-    
-    <path d="M21 3H3c-1.1 0-2 .9-2 2v3h2V5h18v14h-7v2h7c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"></path>
-   
-    <path d="M1 18v3h3c0-1.66-1.34-3-3-3zm0-4v2c2.76 0 5 2.24 5 5h2c0-3.87-3.13-7-7-7zm0-4v2c4.97 0 9 4.03 9 9h2c0-6.08-4.92-11-11-11z"></path>
-  </svg>
-</button>
-
-        <!-- Nút 3 chấm -->
-        <button class="p-2 hover:bg-white/10 rounded-full transition hidden sm:block">
-          <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
-            <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path>
-          </svg>
-        </button>
-
-        <!-- Nút Đăng nhập -->
-        <button id="login-btn" class="bg-white text-black px-4 py-1.5 rounded-full font-medium text-sm hover:bg-[#d9d9d9] transition whitespace-nowrap ml-2">
-          Đăng nhập
-        </button>
+      <!-- Right: User Section -->
+      <div class="flex min-w-[180px] items-center justify-end gap-2">
+        ${rightSectionHtml}
       </div>
     </header>
   `;
