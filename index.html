@@ -2,15 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>f8-du-an-cuoi-js</title>
-
+    <title>YouTube Music Clone</title>
+    <!-- Font Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   </head>
-  <body class=" text-white overflow-x-hidden ">
-    <div id="app" class="w-full h-[100vh] flex bg-red-950 ">
-      
+  <body>
+    <div id="app" class="h-screen flex flex-col">
+      <!-- Header Container -->
+      <div id="header-container"></div>
+
+      <div class="flex flex-1 overflow-hidden">
+        <!-- Sidebar Container -->
+        <div id="sidebar-container"></div>
+        
+        <!-- Main Content (Router View) -->
+        <main id="main-content" class="flex-1 p-6 overflow-y-auto bg-yt-black">
+          <!-- Nội dung thay đổi ở đây -->
+        </main>
+      </div>
     </div>
     <script type="module" src="/src/main.js"></script>
+     <script src="/src/api.js"></script>
   </body>
 </html>

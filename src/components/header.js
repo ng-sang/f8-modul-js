@@ -1,0 +1,39 @@
+export function renderHeader() {
+  return `
+    <header class="h-16 flex items-center justify-between px-4 border-b border-[#1f1f1f] sticky top-0 bg-yt-black z-50">
+      <!-- Left: Menu & Logo -->
+      <div class="flex items-center gap-4">
+        <button class="p-2 hover:bg-white/10 rounded-full">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+        <div class="flex items-center gap-1 cursor-pointer">
+          <div class="bg-white rounded-full p-[2px]">
+             <!-- Logo tròn đơn giản -->
+            <div class="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center">
+               <div class="w-2 h-2 border-l-4 border-l-white border-y-4 border-y-transparent ml-1"></div>
+            </div>
+          </div>
+          <span class="text-xl font-bold tracking-tight">Music</span>
+        </div>
+      </div>
+
+      <!-- Center: Search -->
+      <div class="flex-1 max-w-[500px] hidden md:block">
+        <div class="flex items-center bg-[#212121] rounded-lg px-4 py-2 border border-[#333]">
+          <svg class="w-5 h-5 text-yt-text mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <input type="text" placeholder="Tìm bài hát, đĩa nhạc, nghệ sĩ" class="bg-transparent border-none outline-none text-white w-full placeholder-[#909090] text-[15px]">
+        </div>
+      </div>
+
+      <!-- Right: Actions -->
+      <div class="flex items-center gap-4">
+        <button class="hidden sm:block text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg></button>
+        <button class="hidden sm:block text-white"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg></button>
+        
+        <button class="bg-white text-black px-4 py-1.5 rounded-full text-sm font-medium hover:bg-gray-200 transition">
+          Đăng nhập
+        </button>
+      </div>
+    </header>
+  `;
+}

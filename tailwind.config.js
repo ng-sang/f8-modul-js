@@ -2,11 +2,23 @@
 export default {
   content: [
     "./index.html",
-    // Dòng dưới rất quan trọng: thêm đuôi js vào để nó quét file header.js
-    "./src/**/*.{js,ts,jsx,tsx}", 
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        yt: {
+          black: '#030303',
+          hover: '#2a2a2a',
+          sidebar: '#030303',
+          search: '#212121',
+          active: '#282828' // Màu xám đậm cho nút Trang chủ
+        }
+      },
+      fontFamily: {
+        sans: ['Roboto', 'Arial', 'sans-serif'],
+      }
+    },
   },
   plugins: [],
 }
