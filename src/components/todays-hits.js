@@ -3,7 +3,7 @@
 export function renderTodaysHits() {
   return `
     <div class="w-full mb-10 group/section">
-      <!-- Header: Title + Navigation Buttons -->
+      <!-- Header -->
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-3xl font-bold text-white">Today's Hits</h2>
         
@@ -43,24 +43,19 @@ export async function initTodaysHitsLogic() {
   if (!container) return;
 
   try {
-    // 1. Gọi API
     const response = await fetch('https://youtube-music.f8team.dev/api/home/todays-hits');
     const data = await response.json();
-    
-    // API trả về mảng trực tiếp hoặc data.data
     const items = Array.isArray(data) ? data : (data.data || []);
 
-    // 2. Render HTML
     if (items.length > 0) {
       const html = items.map(item => {
         const title = item.title;
-        // Lấy ảnh thumbnail (nếu có)
-        // const thumbnail = item.thumbnails?.[0]?.url || 'https://via.placeholder.com/300';
-        // Xử lý tên nghệ sĩ (Various Artists)
         const artists = item.artists?.map(a => a.name).join(', ') || 'Various Artists';
-
+        
+        // --- THAY ĐỔI: Dùng thẻ <a> thay vì div ---
+        // Link tới /playlists/details/slug
         return `
-          <div class="w-[180px] md:w-[200px] shrink-0 cursor-pointer group flex flex-col">
+          <a href="/playlists/details/${item.slug}" class="w-[180px] md:w-[200px] shrink-0 cursor-pointer group flex flex-col">
             <!-- Image Container -->
             <div class="relative w-full aspect-square rounded-md overflow-hidden mb-3">
               <img src="${item.thumbnails}" alt="${title}" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" loading="lazy">
@@ -78,7 +73,7 @@ export async function initTodaysHitsLogic() {
             <p class="text-[#909090] text-[14px] truncate mt-1 hover:text-white transition">
                ${artists}
             </p>
-          </div>
+          </a>
         `;
       }).join('');
       
@@ -92,9 +87,8 @@ export async function initTodaysHitsLogic() {
     container.innerHTML = '';
   }
 
-  // --- Logic Scroll (Xử lý riêng cho slider Hits) ---
+  // --- Scroll Logic (Giữ nguyên) ---
   const handleScroll = () => {
-    // Hiện/Ẩn nút Prev
     if (container.scrollLeft > 20) {
       btnPrev.classList.remove('hidden');
       btnPrev.classList.add('flex');
@@ -102,8 +96,6 @@ export async function initTodaysHitsLogic() {
       btnPrev.classList.add('hidden');
       btnPrev.classList.remove('flex');
     }
-
-    // Disable nút Next nếu hết đường cuộn
     const maxScroll = container.scrollWidth - container.clientWidth;
     if (Math.ceil(container.scrollLeft) >= maxScroll - 10) {
         btnNext.classList.add('opacity-50', 'cursor-not-allowed');
@@ -113,11 +105,9 @@ export async function initTodaysHitsLogic() {
   };
 
   container.addEventListener('scroll', handleScroll);
-
   btnNext.addEventListener('click', () => {
     container.scrollBy({ left: container.clientWidth * 0.8, behavior: 'smooth' });
   });
-
   btnPrev.addEventListener('click', () => {
     container.scrollBy({ left: -(container.clientWidth * 0.8), behavior: 'smooth' });
   });

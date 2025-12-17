@@ -56,9 +56,11 @@ export async function initSuggestedAlbumsLogic() {
         const title = item.title;
       
         const artists = item.artists?.map(a => a.name).join(', ') || 'Nghệ sĩ';
-
+     
+        
+//href="/albums/details/" 
         return `
-          <div class="w-[180px] md:w-[200px] shrink-0 cursor-pointer group flex flex-col">
+          <a href="/albums/details/${item.slug}" class="w-[180px] md:w-[200px] shrink-0 cursor-pointer group flex flex-col">
             <!-- Image Container -->
             <div class="relative w-full aspect-square rounded-md overflow-hidden mb-3">
               <img src="${ item.thumbnails}" alt="${title}" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" loading="lazy">
@@ -76,7 +78,7 @@ export async function initSuggestedAlbumsLogic() {
             <p class="text-[#909090] text-[14px] truncate mt-1 hover:text-white transition">
                ${artists}
             </p>
-          </div>
+          </a>
         `;
       }).join('');
       

@@ -99,6 +99,7 @@ export async function initQuickPicksLogic() {
       }).join('');
       
       container.innerHTML = html;
+      
     } else {
       container.innerHTML = '<p class="text-gray-500 col-span-3">Không có nội dung</p>';
     }
@@ -108,3 +109,4 @@ export async function initQuickPicksLogic() {
     container.innerHTML = '';
   }
 }
+
