@@ -3,7 +3,7 @@
 export function renderQuickPicks() {
   return `
     <div class="w-full mb-10">
-      <!-- Header: Title + Navigation Buttons -->
+      <!-- Header -->
       <div class="flex items-center justify-between mb-4">
         <div>
            <span class="text-xs font-bold tracking-wider text-[#aaa] uppercase">Bắt đầu radio từ bài hát</span>
@@ -20,13 +20,12 @@ export function renderQuickPicks() {
         </div>
       </div>
 
-      <!-- Grid Container: Chứa các item -->
-      <!-- Sử dụng Grid để chia cột: Mobile 1 cột, Tablet 2 cột, Desktop 3 cột -->
+      <!-- Grid Container -->
       <div 
         id="quick-picks-list" 
         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2"
       >
-        <!-- Skeleton Loading (Hiệu ứng chờ) -->
+        <!-- Skeleton Loading -->
         ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(() => `
           <div class="flex items-center gap-3 p-2 rounded-md">
             <div class="w-12 h-12 bg-[#ffffff1a] rounded animate-pulse shrink-0"></div>
@@ -46,32 +45,28 @@ export async function initQuickPicksLogic() {
   if (!container) return;
 
   try {
-
     const response = await fetch('https://youtube-music.f8team.dev/api/quick-picks');
     const data = await response.json();
-    
-  
-
     const items = Array.isArray(data) ? data : (data.data || []);
 
-    // 2. Render Items
     if (items.length > 0) {
-      const html = items.map(item => {
-        // Lấy thông tin từ object item
+      const html = items.map((item) => {
         const title = item.title;
-       
-        
-        // Xử lý nghệ sĩ: nối tên các nghệ sĩ bằng dấu phẩy
+        // Xử lý thumbnail an toàn
+        const thumbnail = (item.thumbnails && item.thumbnails.length > 0) 
+            ? (Array.isArray(item.thumbnails) ? item.thumbnails[0].url || item.thumbnails : item.thumbnails) 
+            : 'https://placehold.co/50';
+            
         const artists = item.artists?.map(a => a.name).join(', ') || 'Various Artists';
-       
-        // Nếu API có field viewCount thì thay vào: item.viewCount
-        const views = Math.floor(Math.random() * 500) + ' lượt nghe'; 
-
+        
+      
         return `
-          <a href="/playlists/details/${item.slug}" class="group flex items-center gap-4 p-2 rounded-md hover:bg-[#ffffff1a] cursor-pointer transition duration-200">
+          <a href="/playlists/details/${item.slug}" 
+             class="group flex items-center gap-4 p-2 rounded-md hover:bg-[#ffffff1a] cursor-pointer transition duration-200 select-none">
+            
             <!-- Thumbnail Image -->
             <div class="relative w-12 h-12 shrink-0 overflow-hidden rounded">
-              <img src="${item.thumbnails}" alt="${title}" class="w-full h-full object-cover">
+              <img src="${thumbnail}" alt="${title}" class="w-full h-full object-cover">
               <!-- Overlay play icon khi hover -->
               <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center">
                  <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
@@ -79,17 +74,17 @@ export async function initQuickPicksLogic() {
             </div>
 
             <!-- Info -->
-            <div class="flex flex-col overflow-hidden">
-              <h3 class="text-white font-medium text-[15px] truncate" title="${title}">${title}</h3>
+            <div class="flex flex-col overflow-hidden flex-1">
+              <h3 class="text-white font-medium text-[15px] truncate group-hover:underline" title="${title}">${title}</h3>
               <p class="text-[#909090] text-[13px] truncate">
-                ${artists} • ${views}
+                ${artists}
               </p>
             </div>
             
-            <!-- Option Icon (hiện khi hover) -->
+            <!-- Option Icon -->
              <div class="ml-auto opacity-0 group-hover:opacity-100 transition">
-                <button class="p-1 hover:bg-[#ffffff1a] rounded-full">
-                   <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>
+                <button class="p-1 hover:bg-[#ffffff1a] rounded-full text-white">
+                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>
                 </button>
              </div>
           </a>
@@ -107,4 +102,3 @@ export async function initQuickPicksLogic() {
     container.innerHTML = '';
   }
 }
-

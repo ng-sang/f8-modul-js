@@ -152,7 +152,7 @@ export function mods(id) {
                 `;
             }).join("");
 
-            // 4. Render Layout Chính (Giống layout Album)
+            // 4. Render Layout Chính
             container.innerHTML = `
             <div class="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 md:gap-12 pt-6 pb-20">
                 <!-- Cột Trái -->
