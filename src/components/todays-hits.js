@@ -1,4 +1,4 @@
-// src/components/todays-hits.js
+
 
 export function renderTodaysHits() {
   return `
@@ -52,7 +52,7 @@ export async function initTodaysHitsLogic() {
         const title = item.title;
         const artists = item.artists?.map(a => a.name).join(', ') || 'Various Artists';
         
-        // --- THAY ĐỔI: Dùng thẻ <a> thay vì div ---
+    
         // Link tới /playlists/details/slug
         return `
           <a href="/playlists/details/${item.slug}" class="w-[180px] md:w-[200px] shrink-0 cursor-pointer group flex flex-col">

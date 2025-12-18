@@ -1,4 +1,4 @@
-// src/components/quick-picks.js
+
 
 export function renderQuickPicks() {
   return `
@@ -46,12 +46,11 @@ export async function initQuickPicksLogic() {
   if (!container) return;
 
   try {
-    // 1. Gọi API
+
     const response = await fetch('https://youtube-music.f8team.dev/api/quick-picks');
     const data = await response.json();
     
-    // Log dữ liệu để kiểm tra (tùy chọn)
-    // console.log('Quick Picks Data:', data);
+  
 
     const items = Array.isArray(data) ? data : (data.data || []);
 
@@ -64,8 +63,7 @@ export async function initQuickPicksLogic() {
         
         // Xử lý nghệ sĩ: nối tên các nghệ sĩ bằng dấu phẩy
         const artists = item.artists?.map(a => a.name).join(', ') || 'Various Artists';
-        
-        // Giả lập lượt nghe vì API snippet chưa thấy field này (hoặc có thể dùng item.description nếu có)
+       
         // Nếu API có field viewCount thì thay vào: item.viewCount
         const views = Math.floor(Math.random() * 500) + ' lượt nghe'; 
 

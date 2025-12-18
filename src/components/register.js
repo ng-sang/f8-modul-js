@@ -1,4 +1,4 @@
-// src/components/register.js
+
 import { register } from '../api.js';
 
 export function renderRegister() {

@@ -1,4 +1,4 @@
-// src/components/login.js
+
 import { login } from '../api.js';
 
 export function renderLogin() {

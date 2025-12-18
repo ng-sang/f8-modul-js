@@ -1,4 +1,4 @@
-// src/components/header.js
+
 import { getUser, logout } from '../api.js';
 
 export function renderHeader() {
@@ -40,10 +40,9 @@ export function renderHeader() {
           <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
         <a href="#/" class="flex items-center gap-1 cursor-pointer">
-          <div class="bg-white rounded-full p-[2px]">
-            <div class="w-6 h-6 bg-red-600 rounded-full flex items-center justify-center">
-               <div class="w-2 h-2 border-l-4 border-l-white border-y-4 border-y-transparent ml-1"></div>
-            </div>
+          <div class="rounded-full ">
+           
+            <img src="img/logo.png" class="w-6 h-6  rounded-full flex items-center justify-center"/>
           </div>
           <span class="text-xl font-bold tracking-tight text-white">Music</span>
         </a>
@@ -66,5 +65,3 @@ export function renderHeader() {
   `;
 }
 
-// 6. Gắn sự kiện Logout vào main.js hoặc nơi khởi tạo Header
-// (Do header được render bằng innerHTML string nên ta cần delegate event hoặc render lại)

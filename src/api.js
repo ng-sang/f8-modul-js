@@ -1,4 +1,4 @@
-// --- START OF FILE api.js ---
+
 
 const BASE_URl = "https://youtube-music.f8team.dev/api";
 const STORAGE_KEY = 'yt_music_player_state';
@@ -8,7 +8,7 @@ let currentPlaylist = []; // Danh sách bài hát đang phát thực tế
 let currentTrackIndex = 0; // Vị trí bài đang phát
 let lastVolume = 1;       // Lưu volume trước khi mute
 
-// --- DOM ELEMENTS (PLAYER) ---
+
 const audioPlayer = document.getElementById("main-audio");
 const playerBar = document.getElementById("player-bar");
 const playBtn = document.getElementById("btn-play");

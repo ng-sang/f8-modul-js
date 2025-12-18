@@ -1,4 +1,4 @@
-// src/components/suggested-albums.js
+
 
 export function renderSuggestedAlbums() {
   return `
@@ -43,14 +43,14 @@ export async function initSuggestedAlbumsLogic() {
   if (!container) return;
 
   try {
-    // 1. Gọi API
+  
     const response = await fetch('https://youtube-music.f8team.dev/api/home/albums-for-you');
     const data = await response.json();
     
     // Xử lý data (nếu trả về mảng trực tiếp hoặc data.data)
     const items = Array.isArray(data) ? data : (data.data || []);
 
-    // 2. Render HTML
+    // Render HTML
     if (items.length > 0) {
       const html = items.map(item => {
         const title = item.title;

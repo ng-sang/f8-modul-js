@@ -1,6 +1,4 @@
-// src/components/moods.js
 
-// 1. Hàm trả về khung HTML tĩnh
 export function renderMoodsContainer() {
   return `
     <div class="relative w-full mb-8 group" id="mood-section">
@@ -28,7 +26,7 @@ export function renderMoodsContainer() {
   `;
 }
 
-// 2. Hàm Logic: Gọi API và gắn sự kiện
+
 export async function initMoodsLogic() {
   const moodList = document.getElementById('mood-list');
   const btnPrev = document.getElementById('btn-prev');
