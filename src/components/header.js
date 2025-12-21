@@ -1,5 +1,5 @@
 
-import { getUser, logout } from '../api.js';
+import { getUser} from '../api.js';
 
 export function renderHeader() {
   const user = getUser(); // Lấy thông tin user từ localStorage
@@ -42,7 +42,7 @@ export function renderHeader() {
         <a href="#/" class="flex items-center gap-1 cursor-pointer">
           <div class="rounded-full ">
            
-            <img src="img/logo.png" class="w-6 h-6  rounded-full flex items-center justify-center"/>
+            <img src="/img/logo.png" class="w-6 h-6  rounded-full flex items-center justify-center"/>
           </div>
           <span class="text-xl font-bold tracking-tight text-white">Music</span>
         </a>

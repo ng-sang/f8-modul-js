@@ -55,7 +55,7 @@ export async function initQuickPicksLogic() {
         // Xử lý thumbnail an toàn
         const thumbnail = (item.thumbnails && item.thumbnails.length > 0) 
             ? (Array.isArray(item.thumbnails) ? item.thumbnails[0].url || item.thumbnails : item.thumbnails) 
-            : 'https://placehold.co/50';
+            : 'https://picsum.photos/50';
             
         const artists = item.artists?.map(a => a.name).join(', ') || 'Various Artists';
         

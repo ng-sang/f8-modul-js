@@ -1,16 +1,17 @@
-
-
 import Navigo from 'navigo';
 import { renderSidebar } from './components/sidebar.js';
 
-import { renderMoodsContainer, initMoodsLogic } from './components/moods.js';
+// Import từ thư mục home
+import { renderMoodsContainer, initMoodsLogic } from './components/home/moods.js';
+import { renderSuggestedAlbums, initSuggestedAlbumsLogic } from './components/home/albums_for_you.js';
+import { renderTodaysHits, initTodaysHitsLogic } from './components/home/todays-hits.js';
+
 import { renderQuickPicks, initQuickPicksLogic } from './components/quick-picks.js';
-import { renderSuggestedAlbums, initSuggestedAlbumsLogic } from './components/suggested-albums.js';
-import { renderTodaysHits, initTodaysHitsLogic } from './components/todays-hits.js';
-import { mods, loadAlbumDetails } from './api.js';
 import { renderExplore, initExploreLogic } from './components/explore.js';
 import { renderLogin, initLoginLogic } from './components/login.js';
 import { renderRegister, initRegisterLogic } from './components/register.js';
+
+import { mods, loadAlbumDetails, loadCategoryDetails, loadLineDetails } from './api.js';
 
 export function initRouter() {
   const contentDiv = document.querySelector('#main-content');
@@ -21,7 +22,6 @@ export function initRouter() {
     before: (done, match) => {
       const currentPath = match.url ? `/${match.url}` : '/';
       sidebarContainer.innerHTML = renderSidebar(currentPath);
-      // Xóa nội dung cũ
       contentDiv.innerHTML = ''; 
       done();
     }
@@ -54,35 +54,30 @@ export function initRouter() {
       contentDiv.innerHTML = `<h1 class="text-3xl font-bold mt-4 px-4 text-white">Thư viện (Đang phát triển)</h1>`;
     })
 
-    
     .on('/playlists/details/:id', (match) => { 
-        // 1. Tạo container trước
-        contentDiv.innerHTML = `<div id="playlist-container" class="text-white p-4">Đang tải playlist...</div>`;
-        // 2. Gọi hàm load dữ liệu
+        contentDiv.innerHTML = `<div id="playlist-container" class="text-white p-4">Đang tải...</div>`;
         mods(match.data.id); 
     })
 
     .on('/albums/details/:slug', (match) => { 
-        // 1. Tạo container trước
-        contentDiv.innerHTML = `<div id="album-container" class="text-white p-4">Đang tải album...</div>`;
-        // 2. Gọi hàm load dữ liệu
+        contentDiv.innerHTML = `<div id="album-container" class="text-white p-4">Đang tải...</div>`;
         loadAlbumDetails(match.data.slug); 
     })
-    // ------------------------
 
-    .on('/login', () => {
-      contentDiv.innerHTML = renderLogin();
-      initLoginLogic();
+    .on('/categories/:slug', (match) => { 
+        contentDiv.innerHTML = `<div id="category-container" class="text-white p-4">Đang tải...</div>`;
+        loadCategoryDetails(match.data.slug); 
     })
 
-    .on('/register', () => {
-      contentDiv.innerHTML = renderRegister();
-      initRegisterLogic();
+    .on('/lines/:slug', (match) => { 
+        contentDiv.innerHTML = `<div id="line-container" class="text-white p-4">Đang tải...</div>`;
+        loadLineDetails(match.data.slug); 
     })
 
-    .notFound(() => {
-      contentDiv.innerHTML = `<h1 class="text-3xl font-bold mt-4 text-white p-4">404 - Không tìm thấy trang</h1>`;
-    });
+    .on('/login', () => { contentDiv.innerHTML = renderLogin(); initLoginLogic(); })
+    .on('/register', () => { contentDiv.innerHTML = renderRegister(); initRegisterLogic(); })
+
+    .notFound(() => { contentDiv.innerHTML = `<h1 class="text-3xl font-bold mt-4 text-white p-4">404 - Không tìm thấy trang</h1>`; });
 
   router.resolve();
 }

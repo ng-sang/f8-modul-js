@@ -1,582 +1,237 @@
+import { API_BASE_URL } from './config.js';
 
-
-const BASE_URl = "https://youtube-music.f8team.dev/api";
 const STORAGE_KEY = 'yt_music_player_state';
+const AUTH_KEY = 'yt_auth_token';
+const USER_KEY = 'yt_auth_user';
 
-// --- KHAI BÁO BIẾN STATE ---
-let currentPlaylist = []; // Danh sách bài hát đang phát thực tế
-let currentTrackIndex = 0; // Vị trí bài đang phát
-let lastVolume = 1;       // Lưu volume trước khi mute
+let currentPlaylist = [], currentTrackIndex = 0, lastVolume = 1;
 
+const audio = document.getElementById("main-audio");
+const els = {
+    bar: document.getElementById("player-bar"),
+    play: document.getElementById("btn-play"),
+    prev: document.getElementById("btn-prev"),
+    next: document.getElementById("btn-next"),
+    iconPlay: document.getElementById("icon-play"),
+    iconPause: document.getElementById("icon-pause"),
+    progress: document.getElementById("progress-bar"),
+    cont: document.getElementById("progress-container"),
+    title: document.getElementById("player-title"),
+    artist: document.getElementById("player-artist"),
+    img: document.getElementById("player-img"),
+    curTime: document.getElementById("current-time"),
+    durTime: document.getElementById("total-duration"),
+    slider: document.getElementById("volume-slider"),
+    btnVol: document.getElementById("btn-volume"),
+    volOn: document.getElementById("icon-vol-on"),
+    volMute: document.getElementById("icon-vol-mute"),
+    close: document.getElementById("btn-close-player")
+};
 
-const audioPlayer = document.getElementById("main-audio");
-const playerBar = document.getElementById("player-bar");
-const playBtn = document.getElementById("btn-play");
-const prevBtn = document.getElementById("btn-prev");
-const nextBtn = document.getElementById("btn-next");
-const iconPlay = document.getElementById("icon-play");
-const iconPause = document.getElementById("icon-pause");
-const progressBar = document.getElementById("progress-bar");
-const progressContainer = document.getElementById("progress-container");
-const playerTitle = document.getElementById("player-title");
-const playerArtist = document.getElementById("player-artist");
-const playerImg = document.getElementById("player-img");
-const timeCurrent = document.getElementById("current-time");
-const timeTotal = document.getElementById("total-duration");
-const volumeSlider = document.getElementById("volume-slider");
-const btnVolume = document.getElementById("btn-volume");
-const iconVolOn = document.getElementById("icon-vol-on");
-const iconVolMute = document.getElementById("icon-vol-mute");
+const fmtTime = s => s ? `${Math.floor(s / 60)}:${(Math.floor(s % 60) + '').padStart(2, '0')}` : '0:00';
+const fmtDur = s => { const h = Math.floor(s/3600), m = Math.floor((s%3600)/60); return h > 0 ? `${h} giờ ${m} phút` : `${m} phút`; };
 
-// --- 1. LOCAL STORAGE LOGIC (Lưu & Khôi phục) ---
-
-function savePlayerState() {
-    const state = {
-        playlist: currentPlaylist,
-        index: currentTrackIndex,
-        currentTime: audioPlayer.currentTime,
-        volume: audioPlayer.volume,
-        // isPlaying: !audioPlayer.paused // Không cần lưu trạng thái play vì browser chặn autoplay
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ playlist: currentPlaylist, index: currentTrackIndex, currentTime: audio.currentTime, volume: audio.volume }));
 }
 
-function loadPlayerState() {
-    const savedState = localStorage.getItem(STORAGE_KEY);
-    if (!savedState) return;
-
+function loadState() {
     try {
-        const state = JSON.parse(savedState);
-        
-        // Khôi phục Volume
-        const savedVol = state.volume !== undefined ? state.volume : 1;
-        audioPlayer.volume = savedVol;
-        volumeSlider.value = savedVol;
-        updateVolumeIcon(savedVol);
-
-        // Khôi phục Playlist & Bài hát
-        if (state.playlist && Array.isArray(state.playlist) && state.playlist.length > 0) {
+        const state = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!state) return;
+        audio.volume = els.slider.value = state.volume ?? 1;
+        updateVolIcon(audio.volume);
+        if (state.playlist?.length) {
             currentPlaylist = state.playlist;
             currentTrackIndex = state.index || 0;
-            
-            const track = currentPlaylist[currentTrackIndex];
-            if (track) {
-                // Render Player Bar
-                playerBar.classList.remove("hidden");
-                playerBar.classList.add("flex");
-                renderPlayerUI(track);
-                
-                // Set source & time
-                if (track.audioUrl) {
-                    audioPlayer.src = track.audioUrl;
-                    if (state.currentTime) {
-                        audioPlayer.currentTime = state.currentTime;
-                    }
-                }
-                
-                // Highlight nếu đang ở trang danh sách tương ứng
-                highlightTrack(currentTrackIndex);
+            els.bar.classList.remove("hidden"); els.bar.classList.add("flex");
+            renderPlayerUI(currentPlaylist[currentTrackIndex]);
+            if (currentPlaylist[currentTrackIndex].audioUrl) {
+                audio.src = currentPlaylist[currentTrackIndex].audioUrl;
+                audio.currentTime = state.currentTime || 0;
             }
-        }
-        // Luôn để trạng thái Pause khi vừa F5 (Do chính sách Autoplay của trình duyệt)
-        updatePlayBtn(false); 
-
-    } catch (e) {
-        console.error("Lỗi khôi phục trạng thái player:", e);
-    }
-}
-
-// --- 2. LOGIC HIỂN THỊ (VIEW) ---
-
-// A. Hiển thị Chi tiết Playlist
-// A. Hiển thị Chi tiết Playlist (Hàm mods được viết lại)
-export function mods(id) {
-    async function fetchPlaylist(playlistId) {
-        const container = document.getElementById('playlist-container'); // Selector ID mới
-        if (!container) return;
-
-        try {
-            const response = await fetch(`${BASE_URl}/playlists/details/${playlistId}`);
-            const data = await response.json();
-            
-            // 1. Lưu danh sách đang xem vào biến tạm
-            window.viewingPlaylist = data.tracks || [];
-
-            // 2. Xử lý dữ liệu hiển thị
-            const title = data.title;
-            const thumbnail = data.thumbnails ? data.thumbnails[0] : 'https://placehold.co/400';
-            const description = data.description || ''; // Playlist thường có description
-            const type = "Playlist"; // Mặc định là playlist
-
-            // Xử lý thời gian
-            const totalSeconds = data.duration || 0;
-            const h = Math.floor(totalSeconds / 3600);
-            const m = Math.floor((totalSeconds % 3600) / 60);
-            const durationStr = h > 0 ? `${h} giờ ${m} phút` : `${m} phút`;
-            const songCount = window.viewingPlaylist.length;
-
-            // Xử lý Artist (nếu có)
-            let artistName = "Various Artists";
-            if (data.artists && Array.isArray(data.artists)) {
-                artistName = data.artists.map(a => a.name).join(', ');
-            }
-
-            // 3. Render danh sách bài hát
-            const tracksHTML = window.viewingPlaylist.map((track, index) => {
-                const trackThumb = track.thumbnails ? track.thumbnails[0] : 'https://placehold.co/50';
-                const trackDuration = track.duration || 0;
-                const min = Math.floor(trackDuration / 60);
-                const sec = trackDuration % 60;
-                const timeDisplay = `${min}:${sec < 10 ? '0' + sec : sec}`;
-
-                return `
-                <li id="track-${index}" onclick="window.playMusic(${index}, true)" 
-                    class="group flex items-center p-2 rounded-md hover:bg-white/10 cursor-pointer transition border-b border-transparent hover:border-transparent mb-2">
-                    
-                    <span class="w-8 text-center text-gray-400 font-medium text-sm group-hover:hidden">${index + 1}</span>
-                    <span class="w-8 text-center hidden group-hover:block">
-                        <svg class="w-5 h-5 text-white mx-auto" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    </span>
-
-                    <div class="w-10 h-10 rounded overflow-hidden mr-4 shrink-0">
-                        <img src="${trackThumb}" class="w-full h-full object-cover">
-                    </div>
-
-                    <div class="flex flex-col flex-grow overflow-hidden mr-4">
-                        <span class="text-[15px] font-medium text-white truncate group-hover:underline">${track.title}</span>
-                        <span class="text-xs text-gray-400 truncate">${track.artists ? track.artists.map(a=>a.name).join(', ') : ''}</span>
-                    </div>
-
-                    <span class="text-sm text-gray-400 font-mono">${timeDisplay}</span>
-                </li>
-                `;
-            }).join("");
-
-            // 4. Render Layout Chính
-            container.innerHTML = `
-            <div class="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 md:gap-12 pt-6 pb-20">
-                <!-- Cột Trái -->
-                <div class="w-full md:w-[350px] flex-shrink-0 flex flex-col items-center text-center md:sticky md:top-4 h-fit">
-                    <div class="w-[280px] h-[280px] md:w-full md:h-auto aspect-square rounded-lg overflow-hidden shadow-2xl mb-6">
-                        <img src="${thumbnail}" alt="${title}" class="w-full h-full object-cover">
-                    </div>
-                    
-                    <h1 class="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">${title}</h1>
-                    
-                    <div class="text-[#aaaaaa] text-[15px] space-y-1 font-medium">
-                        <p>${type} • ${artistName}</p>
-                        <p>${songCount} bài hát • ${durationStr}</p>
-                        ${data.year ? `<p>Năm: ${data.year}</p>` : ''}
-                    </div>
-
-                    <p class="text-gray-500 text-sm mt-4 line-clamp-3">${description}</p>
-                    
-                    <div class="flex gap-3 mt-6">
-                        <button onclick="window.playMusic(0, true)" class="px-8 py-2 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition">
-                            Phát tất cả
-                        </button>
-                         <button class="w-10 h-10 rounded-full border border-gray-600 flex items-center justify-center hover:bg-white/10 text-white">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Cột Phải -->
-                <div class="flex-grow w-full min-w-0">
-                    <ul class="flex flex-col">
-                        ${tracksHTML}
-                    </ul>
-                </div>
-            </div>`;
-            
-            // Highlight nếu bài đang hát nằm trong playlist này
             highlightTrack(currentTrackIndex);
-
-        } catch (error) {
-            console.error("Lỗi tải playlist:", error);
-            container.innerHTML = `<div class="text-red-500">Lỗi tải playlist.</div>`;
         }
-    }
-    fetchPlaylist(id);
+        updatePlayBtn(false);
+    } catch (e) {}
 }
 
+// --- LOGIC RENDER CHI TIẾT ---
 
-// B. Hiển thị Chi tiết Album
-export async function loadAlbumDetails(slug) {
-    const container = document.getElementById('album-container');
+// 1. Playlist & Album (Giao diện 2 cột)
+async function fetchAndRenderList(url, containerId) {
+    const container = document.getElementById(containerId);
     if (!container) return;
-
     try {
-        const response = await fetch(`${BASE_URl}/albums/details/${slug}`);
-        const data = await response.json();
-
-        // Lưu danh sách đang xem vào biến tạm
+        const res = await fetch(url);
+        const data = await res.json();
         window.viewingPlaylist = data.tracks || [];
-
-        const title = data.title;
-        const thumbnail = data.thumbnails ? data.thumbnails[0] : 'https://placehold.co/400';
-        const description = data.description || '';
-        const albumType = data.albumType || 'Album';
+        const cover = data.thumbnails?.[0] || 'https://picsum.photos/400';
         
-        let releaseDateStr = 'Unknown';
-        if (data.releaseDate) {
-            const d = new Date(data.releaseDate);
-            releaseDateStr = d.toLocaleDateString('en-GB');
-        }
-
-        const totalSeconds = data.duration || 0;
-        const h = Math.floor(totalSeconds / 3600);
-        const m = Math.floor((totalSeconds % 3600) / 60);
-        const durationStr = h > 0 ? `${h} giờ ${m} phút` : `${m} phút`;
-        const songCount = data.tracks ? data.tracks.length : 0;
-        const views = data.popularity ? data.popularity : 0; 
-
-        const tracksHTML = data.tracks.map((track, index) => {
-            const trackThumb = track.thumbnails ? track.thumbnails[0] : 'https://placehold.co/50';
-            const trackDuration = track.duration || 0;
-            const min = Math.floor(trackDuration / 60);
-            const sec = trackDuration % 60;
-            const timeDisplay = `${min}:${sec < 10 ? '0' + sec : sec}`;
-
-            // playMusic(index, true) -> true nghĩa là context mới
-            return `
-             <li id="track-${index}" onclick="window.playMusic(${index}, true)" 
-                class="group flex items-center p-2 rounded-md hover:bg-white/10 cursor-pointer transition border-b border-transparent hover:border-transparent mb-2">
-                
-                <span class="w-8 text-center text-gray-400 font-medium text-sm group-hover:hidden">${index + 1}</span>
-                <span class="w-8 text-center hidden group-hover:block">
-                    <svg class="w-5 h-5 text-white mx-auto" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                </span>
-
-                <div class="w-10 h-10 rounded overflow-hidden mr-4 shrink-0">
-                    <img src="${trackThumb}" class="w-full h-full object-cover">
+        container.innerHTML = `
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 md:gap-12 pt-6 pb-20">
+            <div class="w-full md:w-[350px] flex-shrink-0 flex flex-col items-center text-center md:sticky md:top-4 h-fit">
+                <div class="w-[280px] md:w-full aspect-square rounded-lg overflow-hidden shadow-2xl mb-6"><img src="${cover}" class="w-full h-full object-cover"></div>
+                <h1 class="text-3xl md:text-4xl font-bold text-white mb-4">${data.title}</h1>
+                <div class="text-[#aaaaaa] text-[15px] font-medium space-y-1">
+                    <p>${data.albumType || 'Playlist'} • ${Array.isArray(data.artists) ? data.artists.map(a => a.name).join(', ') : 'Various'}</p>
+                    <p>${window.viewingPlaylist.length} bài • ${fmtDur(data.duration || 0)}</p>
                 </div>
+                <p class="text-gray-500 text-sm mt-4 line-clamp-3">${data.description || ''}</p>
+                <div class="flex gap-3 mt-6"><button onclick="window.playMusic(0, true)" class="px-8 py-2 bg-white text-black font-bold rounded-full hover:bg-gray-200">Phát tất cả</button></div>
+            </div>
+            <div class="flex-grow w-full min-w-0">
+                <ul class="flex flex-col">
+                    ${window.viewingPlaylist.map((t, i) => `
+                    <li id="track-${i}" onclick="window.playMusic(${i}, true)" class="group flex items-center p-2 rounded-md hover:bg-white/10 cursor-pointer border-b border-transparent mb-1 transition">
+                        <span class="w-8 text-center text-gray-400 font-medium text-sm group-hover:hidden">${i + 1}</span>
+                        <span class="w-8 text-center hidden group-hover:block"><svg class="w-5 h-5 text-white mx-auto" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+                        <div class="w-10 h-10 rounded overflow-hidden mr-4 shrink-0"><img src="${t.thumbnails?.[0] || 'https://picsum.photos/50'}" class="w-full h-full object-cover"></div>
+                        <div class="flex flex-col flex-grow overflow-hidden mr-4"><span class="text-[15px] font-medium text-white truncate group-hover:underline">${t.title}</span><span class="text-xs text-gray-400 truncate">${t.artists?.map(a => a.name || a).join(', ') || ''}</span></div>
+                        <span class="text-sm text-gray-400 font-mono">${fmtTime(t.duration || 0)}</span>
+                    </li>`).join('')}
+                </ul>
+            </div>
+        </div>`;
+        highlightTrack(currentTrackIndex);
+    } catch (e) { console.error(e); }
+}
 
-                <div class="flex flex-col flex-grow overflow-hidden mr-4">
-                    <span class="text-[15px] font-medium text-white truncate group-hover:underline">${track.title}</span>
-                    <span class="text-xs text-gray-400 truncate">${track.artists ? track.artists.map(a=>a.name).join(', ') : ''}</span>
+export const mods = (id) => fetchAndRenderList(`${API_BASE_URL}/playlists/details/${id}`, 'playlist-container');
+export const loadAlbumDetails = (slug) => fetchAndRenderList(`${API_BASE_URL}/albums/details/${slug}`, 'album-container');
+
+// 2. Categories (Tâm trạng - Nhiều slider ngang)
+export async function loadCategoryDetails(slug) {
+    const container = document.getElementById('category-container');
+    if (!container) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/categories/${slug}`);
+        const data = await res.json();
+        const subcats = data.subcategories || [];
+        if (!subcats.length) { container.innerHTML = '<div class="text-gray-500 pt-10 text-center">Không có nội dung.</div>'; return; }
+
+        container.innerHTML = `<div class="max-w-[1200px] mx-auto pt-6 px-4 pb-20">${subcats.map((sub, idx) => `
+            <div class="w-full mb-10 group/section">
+                <div class="flex items-center justify-between mb-4"><h2 class="text-3xl font-bold text-white">${sub.name}</h2>
+                    <div class="flex gap-2"><button id="btn-p-c-${idx}" class="hidden w-8 h-8 rounded-full bg-transparent border border-white/10 hover:bg-white/10 items-center justify-center transition"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button><button id="btn-n-c-${idx}" class="w-8 h-8 rounded-full bg-transparent border border-white/10 hover:bg-white/10 flex items-center justify-center transition"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button></div>
                 </div>
+                <div id="sc-c-${idx}" class="flex gap-5 overflow-x-auto scroll-smooth no-scrollbar w-full pb-4">
+                    ${(sub.playlists || []).map(p => `
+                        <a href="/playlists/details/${p.slug}" class="w-[200px] shrink-0 cursor-pointer group flex flex-col">
+                            <div class="relative w-full aspect-square rounded-md overflow-hidden mb-3"><img src="${p.thumbnailUrl || 'https://picsum.photos/200'}" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" loading="lazy"><div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center"><button class="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:scale-110 shadow-lg"><svg class="w-6 h-6 text-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button></div></div>
+                            <h3 class="text-white font-bold text-[16px] truncate hover:underline">${p.name || p.title}</h3><p class="text-[#909090] text-[14px] truncate mt-1">${p.description || 'Playlist'}</p>
+                        </a>`).join('')}
+                </div>
+            </div>`).join('')}</div>`;
 
-                <span class="text-sm text-gray-400 font-mono">${timeDisplay}</span>
-            </li>
-            `;
-        }).join('');
+        subcats.forEach((_, idx) => {
+            const row = document.getElementById(`sc-c-${idx}`), bP = document.getElementById(`btn-p-c-${idx}`), bN = document.getElementById(`btn-n-c-${idx}`);
+            if(row && bP && bN) {
+                row.onscroll = () => bP.classList.toggle('hidden', row.scrollLeft <= 20) || bP.classList.toggle('flex', row.scrollLeft > 20);
+                bN.onclick = () => row.scrollBy({ left: row.clientWidth * 0.8, behavior: 'smooth' });
+                bP.onclick = () => row.scrollBy({ left: -row.clientWidth * 0.8, behavior: 'smooth' });
+            }
+        });
+    } catch (e) { container.innerHTML = `<div class="text-red-500 text-center mt-10">Lỗi tải dữ liệu.</div>`; }
+}
+
+// 3. Lines (Thể loại - Grid bài hát)
+export async function loadLineDetails(slug) {
+    const container = document.getElementById('line-container');
+    if (!container) return;
+    try {
+        const res = await fetch(`${API_BASE_URL}/lines/${slug}/songs`);
+        const data = await res.json();
+        const items = data.items || [];
+        window.viewingPlaylist = items;
 
         container.innerHTML = `
-            <div class="max-w-6xl mx-auto flex flex-col md:flex-row gap-8 md:gap-12 pt-6 pb-20">
-                <div class="w-full md:w-[350px] flex-shrink-0 flex flex-col items-center text-center md:sticky md:top-4 h-fit">
-                    <div class="w-[280px] h-[280px] md:w-full md:h-auto aspect-square rounded-lg overflow-hidden shadow-2xl mb-6">
-                        <img src="${thumbnail}" alt="${title}" class="w-full h-full object-cover">
-                    </div>
-                    <h1 class="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">${title}</h1>
-                    <div class="text-[#aaaaaa] text-[15px] space-y-1 font-medium">
-                        <p>${songCount} bài hát • ${durationStr}</p>
-                        <p>${views} lượt nghe</p>
-                        <p>Loại album: ${albumType}</p>
-                        <p>Phát hành: ${releaseDateStr}</p>
-                    </div>
-                    <p class="text-gray-500 text-sm mt-4 line-clamp-3">${description}</p>
-                    
-                    <div class="flex gap-3 mt-6">
-                        <button onclick="window.playMusic(0, true)" class="px-8 py-2 bg-white text-black font-bold rounded-full hover:bg-gray-200 transition">
-                            Phát tất cả
-                        </button>
-                         <button class="w-10 h-10 rounded-full border border-gray-600 flex items-center justify-center hover:bg-white/10 text-white">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        </button>
-                    </div>
+            <div class="max-w-[1200px] mx-auto pt-6 px-4 pb-20">
+                <h1 class="text-3xl font-bold text-white mb-8 capitalize">Bài hát</h1>
+                ${!items.length ? '<p class="text-gray-500">Chưa có bài hát.</p>' : ''}
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    ${items.map((item, index) => `
+                        <div onclick="window.playMusic(${index}, true)" class="group flex items-center gap-3 p-2 rounded-md hover:bg-white/10 cursor-pointer transition select-none">
+                            <div class="relative w-16 h-16 shrink-0 rounded overflow-hidden">
+                                <img src="${item.thumb || 'https://picsum.photos/100'}" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center"><svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+                            </div>
+                            <div class="flex flex-col overflow-hidden">
+                                <h3 class="text-white font-bold text-[15px] truncate group-hover:underline" title="${item.name}">${item.name}</h3>
+                                <p class="text-[#909090] text-[13px] truncate mt-0.5">${item.views ? item.views.toLocaleString() + ' lượt xem' : ''}</p>
+                                <p class="text-[#909090] text-[13px] truncate mt-0.5">${item.albumName || ''}</p>
+                            </div>
+                        </div>`).join('')}
                 </div>
-
-                <div class="flex-grow w-full min-w-0">
-                    <ul class="flex flex-col">
-                        ${tracksHTML}
-                    </ul>
-                     <div class="mt-8 text-xs text-gray-500">
-                        &copy; ${new Date(data.releaseDate).getFullYear()} ${data.artists ? data.artists.map(a=>a.name).join(', ') : 'Music'}
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        highlightTrack(currentTrackIndex);
-
-    } catch (error) {
-        console.error("Lỗi tải Album:", error);
-        container.innerHTML = `<div class="text-red-500 p-4">Không thể tải thông tin album.</div>`;
-    }
+            </div>`;
+    } catch (e) { container.innerHTML = `<div class="text-red-500 text-center mt-10">Lỗi tải dữ liệu.</div>`; }
 }
 
-// --- 3. LOGIC PLAYER NHẠC (CORE) ---
-
-// isNewContext = true: Người dùng bấm vào list bài mới (Album/Playlist đang xem) -> Cần thay đổi danh sách phát
-// isNewContext = false (mặc định): Bấm Next/Prev -> Giữ nguyên danh sách phát
-window.playMusic = async function(index, isNewContext = false) {
-    
-    // Nếu click từ danh sách hiển thị -> Cập nhật danh sách phát
-    if (isNewContext && window.viewingPlaylist && window.viewingPlaylist.length > 0) {
-        currentPlaylist = [...window.viewingPlaylist];
-    }
-
-    if (!currentPlaylist || !currentPlaylist[index]) {
-        console.error("Bài hát không tồn tại index:", index);
-        return;
-    }
+// --- PLAYER CORE ---
+window.playMusic = async (index, newCtx = false) => {
+    if (newCtx && window.viewingPlaylist?.length) currentPlaylist = [...window.viewingPlaylist];
+    if (!currentPlaylist[index]) return;
 
     currentTrackIndex = index;
     const track = currentPlaylist[index];
 
-    // Cập nhật giao diện
-    playerBar.classList.remove("hidden");
-    playerBar.classList.add("flex");
-    renderPlayerUI(track);
-    highlightTrack(index);
-    updatePlayBtn(true);
+    els.bar.classList.add("flex"); els.bar.classList.remove("hidden");
+    renderPlayerUI(track); highlightTrack(index); updatePlayBtn(true);
 
-    // Xử lý Audio
     if (track.audioUrl) {
-        audioPlayer.src = track.audioUrl;
-        try {
-            await audioPlayer.play();
-            savePlayerState(); // Lưu ngay khi bắt đầu phát
-        } catch (error) {
-            if (error.name !== "AbortError") {
-                console.error("Lỗi phát nhạc:", error);
-                updatePlayBtn(false); 
-            }
-        }
-    } else {
-        alert("Bài hát này chưa có link Audio!");
-        updatePlayBtn(false);
-    }
+        audio.src = track.audioUrl;
+        try { await audio.play(); saveState(); } catch (e) { if(e.name!=="AbortError") updatePlayBtn(false); }
+    } else { alert("Chưa có link Audio!"); updatePlayBtn(false); }
 };
 
-// Hàm render thông tin bài hát lên thanh Player
-function renderPlayerUI(track) {
-    playerTitle.innerText = track.title || "Unknown Title";
-    playerImg.src = track.thumbnails ? track.thumbnails[0] : 'https://placehold.co/50';
-    
-    let artistName = "Unknown";
-    if(track.artists && Array.isArray(track.artists)) {
-        artistName = track.artists.map(a => (typeof a === 'object' ? a.name : a)).join(', ');
-    }
-    playerArtist.innerText = artistName;
+function renderPlayerUI(t) {
+    els.title.innerText = t.title || t.name || "Unknown";
+    els.img.src = (t.thumbnails && t.thumbnails[0]) ? t.thumbnails[0] : (t.thumb || 'https://picsum.photos/50');
+    els.artist.innerText = Array.isArray(t.artists) ? t.artists.map(a => a.name || a).join(', ') : (t.albumName || 'Unknown');
 }
 
-// Hàm highlight bài đang hát trong danh sách
-function highlightTrack(index) {
-    // Xóa style cũ
-    document.querySelectorAll('li[id^="track-"]').forEach(li => {
-        li.classList.remove("bg-white/10");
-        // Kiểm tra xem bài hát trong list hiển thị có khớp với bài trong player không
-        // Nếu khớp ID hoặc title thì mới highlight (đây làm đơn giản theo index nếu không đổi list)
-    });
-
-    // Thêm style mới
-    const activeLi = document.getElementById(`track-${index}`);
-    if (activeLi) {
-        // Chỉ highlight nếu bài này thực sự thuộc danh sách đang phát
-        // (Cách check đơn giản nhất: Nếu click từ list này thì highlight)
-        activeLi.classList.add("bg-white/10");
-    }
+function highlightTrack(i) {
+    document.querySelectorAll('li[id^="track-"]').forEach(li => li.classList.remove("bg-white/10"));
+    document.getElementById(`track-${i}`)?.classList.add("bg-white/10");
 }
 
 function updatePlayBtn(isPlaying) {
-    if (isPlaying) {
-        iconPlay.classList.add("hidden");
-        iconPause.classList.remove("hidden");
-    } else {
-        iconPlay.classList.remove("hidden");
-        iconPause.classList.add("hidden");
-    }
+    els.iconPlay.classList.toggle("hidden", isPlaying);
+    els.iconPause.classList.toggle("hidden", !isPlaying);
 }
 
-// --- 4. SỰ KIỆN PLAYER ---
-
-// Nút Play/Pause
-playBtn.onclick = () => {
-    if (audioPlayer.paused) {
-        audioPlayer.play();
-        updatePlayBtn(true);
-    } else {
-        audioPlayer.pause();
-        updatePlayBtn(false);
-    }
-    savePlayerState();
-};
-
-// Nút Next
-nextBtn.onclick = () => {
-    let nextIndex = currentTrackIndex + 1;
-    if (nextIndex >= currentPlaylist.length) nextIndex = 0; 
-    window.playMusic(nextIndex); // isNewContext = false (mặc định)
-};
-
-// Nút Prev
-prevBtn.onclick = () => {
-    let prevIndex = currentTrackIndex - 1;
-    if (prevIndex < 0) prevIndex = currentPlaylist.length - 1;
-    window.playMusic(prevIndex);
-};
-
-// Audio: Cập nhật thanh tiến trình
-audioPlayer.ontimeupdate = (e) => {
-    const currentTime = e.target.currentTime;
-    const duration = e.target.duration;
-
-    if (duration) {
-        const progressPercent = (currentTime / duration) * 100;
-        progressBar.style.width = `${progressPercent}%`;
-        timeCurrent.innerText = formatTime(currentTime);
-        timeTotal.innerText = formatTime(duration);
-    }
-};
-
-// Audio: Tự qua bài
-audioPlayer.onended = () => {
-    nextBtn.click();
-};
-
-// Tua nhạc
-progressContainer.onclick = (e) => {
-    const width = progressContainer.clientWidth;
-    const clickX = e.offsetX;
-    const duration = audioPlayer.duration;
-    
-    if (duration) {
-        audioPlayer.currentTime = (clickX / width) * duration;
-        savePlayerState();
-    }
-};
-
-function formatTime(seconds) {
-    if (!seconds) return "0:00";
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s < 10 ? '0' + s : s}`;
+function updateVolIcon(vol) {
+    els.volOn.classList.toggle("hidden", vol === 0);
+    els.volMute.classList.toggle("hidden", vol > 0);
+    els.btnVol.classList.toggle("text-red-500", vol === 0);
 }
 
-// --- 5. VOLUME CONTROL ---
+els.play.onclick = () => { audio.paused ? (audio.play(), updatePlayBtn(true)) : (audio.pause(), updatePlayBtn(false)); saveState(); };
+els.next.onclick = () => window.playMusic(currentTrackIndex + 1 >= currentPlaylist.length ? 0 : currentTrackIndex + 1);
+els.prev.onclick = () => window.playMusic(currentTrackIndex - 1 < 0 ? currentPlaylist.length - 1 : currentTrackIndex - 1);
+els.btnVol.onclick = () => { audio.volume = audio.volume > 0 ? (lastVolume = audio.volume, els.slider.value = 0, 0) : (els.slider.value = lastVolume, lastVolume); updateVolIcon(audio.volume); saveState(); };
+els.slider.oninput = (e) => { audio.volume = +e.target.value; updateVolIcon(audio.volume); if(audio.volume > 0) lastVolume = audio.volume; saveState(); };
+els.cont.onclick = (e) => { if(audio.duration) audio.currentTime = (e.offsetX / els.cont.clientWidth) * audio.duration; saveState(); };
+els.close.onclick = () => { audio.pause(); updatePlayBtn(false); els.bar.classList.add("hidden"); els.bar.classList.remove("flex"); currentPlaylist = []; saveState(); };
+audio.ontimeupdate = () => { if(!audio.duration) return; els.progress.style.width = `${(audio.currentTime / audio.duration) * 100}%`; els.curTime.innerText = fmtTime(audio.currentTime); els.durTime.innerText = fmtTime(audio.duration); };
+audio.onended = () => els.next.click();
+window.onbeforeunload = saveState;
 
-volumeSlider.oninput = (e) => {
-    const vol = parseFloat(e.target.value);
-    audioPlayer.volume = vol;
-    updateVolumeIcon(vol);
-    if (vol > 0) lastVolume = vol;
-    savePlayerState();
-};
-
-btnVolume.onclick = () => {
-    if (audioPlayer.volume > 0) {
-        lastVolume = audioPlayer.volume;
-        audioPlayer.volume = 0;
-        volumeSlider.value = 0;
-    } else {
-        audioPlayer.volume = lastVolume;
-        volumeSlider.value = lastVolume;
-    }
-    updateVolumeIcon(audioPlayer.volume);
-    savePlayerState();
-};
-
-function updateVolumeIcon(vol) {
-    if (vol === 0) {
-        iconVolOn.classList.add("hidden");
-        iconVolMute.classList.remove("hidden");
-        btnVolume.classList.add("text-red-500");
-    } else {
-        iconVolOn.classList.remove("hidden");
-        iconVolMute.classList.add("hidden");
-        btnVolume.classList.remove("text-red-500");
-    }
-}
-
-// --- 6. SỰ KIỆN HỆ THỐNG ---
-
-// Lưu trạng thái trước khi đóng tab/refresh
-window.addEventListener("beforeunload", () => {
-    savePlayerState();
-});
-
-// Chạy hàm load ngay khi file js được thực thi
-const AUTH_KEY = 'yt_auth_token';
-const USER_KEY = 'yt_auth_user';
-
-// 1. Hàm gọi API Login
-export async function login(email, password) {
+// --- AUTH ---
+const authRequest = async (endpoint, body) => {
     try {
-        const response = await fetch(`${BASE_URl}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Đăng nhập thất bại');
-        }
-
-        // Lưu thông tin vào LocalStorage
+        const res = await fetch(`${API_BASE_URL}/auth/${endpoint}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message);
         localStorage.setItem(AUTH_KEY, data.access_token);
         localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-
-        // Phát sự kiện để Header/Sidebar cập nhật lại giao diện
         window.dispatchEvent(new Event('auth-change'));
-
         return { success: true, user: data.user };
-    } catch (error) {
-        console.error('Lỗi Login:', error);
-        return { success: false, message: error.message };
-    }
-}
+    } catch (e) { return { success: false, message: e.message }; }
+};
+export const login = (email, password) => authRequest('login', { email, password });
+export const register = (name, email, password, confirmPassword) => authRequest('register', { name, email, password, confirmPassword });
+export const logout = () => { localStorage.removeItem(AUTH_KEY); localStorage.removeItem(USER_KEY); window.dispatchEvent(new Event('auth-change')); window.location.hash = '/'; };
+export const getUser = () => JSON.parse(localStorage.getItem(USER_KEY) || 'null');
 
-// 2. Hàm gọi API Register
-export async function register(name, email, password, confirmPassword) {
-    try {
-        const response = await fetch(`${BASE_URl}/auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password, confirmPassword })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            // API thường trả về lỗi chi tiết trong data
-            throw new Error(data.message || JSON.stringify(data) || 'Đăng ký thất bại');
-        }
-
-        // Đăng ký thành công cũng lưu luôn token (nếu API trả về)
-        localStorage.setItem(AUTH_KEY, data.access_token);
-        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-
-        window.dispatchEvent(new Event('auth-change'));
-
-        return { success: true, user: data.user };
-    } catch (error) {
-        console.error('Lỗi Register:', error);
-        return { success: false, message: error.message };
-    }
-}
-
-// 3. Hàm Logout
-export function logout() {
-    localStorage.removeItem(AUTH_KEY);
-    localStorage.removeItem(USER_KEY);
-    window.dispatchEvent(new Event('auth-change'));
-    window.location.hash = '/'; // Quay về trang chủ
-}
-
-// 4. Helper: Lấy thông tin User hiện tại
-export function getUser() {
-    const userStr = localStorage.getItem(USER_KEY);
-    if (userStr) {
-        try {
-            return JSON.parse(userStr);
-        } catch (e) {
-            return null;
-        }
-    }
-    return null;
-}
-loadPlayerState();
+loadState();
