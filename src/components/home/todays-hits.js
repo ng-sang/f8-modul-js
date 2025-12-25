@@ -27,10 +27,7 @@ export async function initTodaysHitsLogic() {
   try {
     const response = await fetch(`${API_BASE_URL}/home/todays-hits`);
     const data = await response.json();
-    const items = Array.isArray(data) ? data : (data.data || []);
-
-    if (items.length > 0) {
-      container.innerHTML = items.map(item => `
+      container.innerHTML = data.map(item => `
           <a href="/playlists/details/${item.slug}" class="w-[180px] md:w-[200px] shrink-0 cursor-pointer group flex flex-col">
             <div class="relative w-full aspect-square rounded-md overflow-hidden mb-3">
               <img src="${item.thumbnails}" alt="${item.title}" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" loading="lazy">
@@ -41,7 +38,6 @@ export async function initTodaysHitsLogic() {
             <h3 class="text-white font-bold text-[16px] truncate hover:underline" title="${item.title}">${item.title}</h3>
             <p class="text-[#909090] text-[14px] truncate mt-1 hover:text-white transition">${item.artists?.map(a => a.name).join(', ') || 'Various Artists'}</p>
           </a>`).join('');
-    } else { container.innerHTML = '<p class="text-gray-500">Không có dữ liệu</p>'; }
   } catch (error) { container.innerHTML = ''; }
 
   const handleScroll = () => {

@@ -21,16 +21,11 @@ export async function initSuggestedAlbumsLogic() {
   const container = document.getElementById('suggested-albums-list');
   const btnPrev = document.getElementById('btn-prev-albums');
   const btnNext = document.getElementById('btn-next-albums');
-
   if (!container) return;
-
   try {
     const response = await fetch(`${API_BASE_URL}/home/albums-for-you`);
     const data = await response.json();
-    const items = Array.isArray(data) ? data : (data.data || []);
-
-    if (items.length > 0) {
-      container.innerHTML = items.map(item => `
+      container.innerHTML = data.map(item => `
           <a href="/albums/details/${item.slug}" class="w-[180px] md:w-[200px] shrink-0 cursor-pointer group flex flex-col">
             <div class="relative w-full aspect-square rounded-md overflow-hidden mb-3">
               <img src="${item.thumbnails}" alt="${item.title}" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" loading="lazy">
@@ -41,7 +36,6 @@ export async function initSuggestedAlbumsLogic() {
             <h3 class="text-white font-bold text-[16px] truncate hover:underline" title="${item.title}">${item.title}</h3>
             <p class="text-[#909090] text-[14px] truncate mt-1 hover:text-white transition">${item.artists?.map(a => a.name).join(', ') || 'Nghệ sĩ'}</p>
           </a>`).join('');
-    } else { container.innerHTML = '<p class="text-gray-500">Không có album nào</p>'; }
   } catch (error) { container.innerHTML = ''; }
 
   const handleScroll = () => {

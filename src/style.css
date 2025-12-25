@@ -6,13 +6,14 @@ body {
   @apply bg-yt-black text-white overflow-hidden;
 }
 
-/* Thêm vào cuối file style.css */
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
 .no-scrollbar {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+
 }
 
 ::-webkit-scrollbar {

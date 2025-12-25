@@ -24,14 +24,11 @@ export async function initMoodsLogic() {
   try {
     const response = await fetch(`${API_BASE_URL}/moods`);
     const data = await response.json();
-    const moods = data.items || [];
-
-    if (moods.length > 0) {
-      moodList.innerHTML = moods.map(mood => `
+   console.log(data);
+      moodList.innerHTML = data.map(mood => `
         <a href="/categories/${mood.slug}" class="shrink-0 px-4 py-2 bg-[#ffffff1a] hover:bg-[#ffffff33] rounded-lg text-sm font-medium text-white transition whitespace-nowrap border border-transparent hover:border-[#ffffff1a] cursor-pointer">
          ${mood.name}
         </a>`).join('');
-    } else { moodList.innerHTML = '<p class="text-sm text-gray-500">Không có dữ liệu</p>'; }
   } catch (error) { moodList.innerHTML = ''; }
 
   const handleScroll = () => {

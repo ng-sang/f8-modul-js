@@ -55,11 +55,8 @@ export async function initQuickPicksLogic() {
         // Xử lý thumbnail an toàn
         const thumbnail = (item.thumbnails && item.thumbnails.length > 0) 
             ? (Array.isArray(item.thumbnails) ? item.thumbnails[0].url || item.thumbnails : item.thumbnails) 
-            : 'https://picsum.photos/50';
-            
+            : 'https://picsum.photos/50';          
         const artists = item.artists?.map(a => a.name).join(', ') || 'Various Artists';
-        
-      
         return `
           <a href="/playlists/details/${item.slug}" 
              class="group flex items-center gap-4 p-2 rounded-md hover:bg-[#ffffff1a] cursor-pointer transition duration-200 select-none">
