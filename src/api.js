@@ -813,6 +813,150 @@ export async function loadCharts() {
     }
 }
 
+// ============================================================
+// --- 10. RENDER MOOD DETAILS 
+// ============================================================
+export async function loadMoodDetail(slug) {
+    const container = document.getElementById('mood-detail-container');
+    if (!container) return;
+
+    try {
+        // 1. Gọi song song 2 API: 
+        // - Chi tiết Mood hiện tại (để lấy playlist)
+        // - Danh sách tất cả Moods (để làm thanh menu trên cùng)
+        const [resDetail, resList] = await Promise.all([
+            fetch(`${API_BASE_URL}/moods/${slug}`),
+            fetch(`${API_BASE_URL}/moods`)
+        ]);
+
+        const data = await resDetail.json();
+        const listData = await resList.json();
+
+        // Xử lý dữ liệu chi tiết
+        const title = data.title || 'Mood';
+        const subtitle = data.subtitle || '';
+        const sections = data.sections || [];
+
+        // Xử lý dữ liệu danh sách Moods
+        const allMoods = listData.items || [];
+
+        // 2. Render HTML
+        let htmlContent = `<div class="max-w-[1200px] mx-auto pt-8 px-4 pb-20">`;
+
+        // --- PHẦN 1: THANH CHỌN MOODS (SLIDER TRÊN CÙNG) ---
+        if (allMoods.length > 0) {
+            htmlContent += `
+            <div class="relative group mb-8">
+                <!-- Nút điều hướng cho thanh Moods -->
+                <div class="absolute right-0 -top-8 flex gap-2">
+                   <button id="btn-p-moodlist" class="hidden w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+                   <button id="btn-n-moodlist" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+                </div>
+
+                <div id="mood-bar-list" class="flex gap-3 overflow-x-auto scroll-smooth no-scrollbar items-center py-2">
+                    ${allMoods.map(m => {
+                        // Kiểm tra xem có phải mood đang chọn không để highlight
+                        const isActive = m.slug === slug;
+                        const activeClass = isActive 
+                            ? 'bg-white text-black border-white' 
+                            : 'bg-[#ffffff1a] text-white border-transparent hover:bg-[#ffffff33] hover:border-[#ffffff1a]';
+                        
+                        return `
+                        <a href="#/moods/${m.slug}" 
+                           class="shrink-0 px-4 py-2 rounded-lg text-sm font-bold transition whitespace-nowrap border ${activeClass}">
+                           ${m.name}
+                        </a>`;
+                    }).join('')}
+                </div>
+            </div>
+            `;
+        }
+
+        // --- PHẦN 2: TIÊU ĐỀ & MÔ TẢ ---
+        htmlContent += `
+            <div class="mb-10">
+                <h1 class="text-5xl font-bold text-white mb-4">${title}</h1>
+                <p class="text-xl text-gray-400">${subtitle}</p>
+            </div>
+        `;
+
+        // --- PHẦN 3: DANH SÁCH PLAYLIST (SECTIONS) ---
+        if (sections.length > 0) {
+            htmlContent += sections.map((sec, idx) => {
+                const sectionTitle = sec.title || 'Danh sách phát';
+                const items = sec.items || [];
+                
+                if (items.length === 0) return '';
+
+                return `
+                <div class="w-full mb-12 group/section">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-3xl font-bold text-white">${sectionTitle}</h2>
+                        <div class="flex gap-2">
+                           <button id="btn-prev-mood-${idx}" class="hidden w-8 h-8 rounded-full bg-transparent border border-[#ffffff1a] hover:bg-[#ffffff1a] items-center justify-center transition"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>
+                           <button id="btn-next-mood-${idx}" class="w-8 h-8 rounded-full bg-transparent border border-[#ffffff1a] hover:bg-[#ffffff1a] flex items-center justify-center transition"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button>
+                        </div>
+                    </div>
+                    <div id="scroll-mood-${idx}" class="flex gap-6 overflow-x-auto scroll-smooth no-scrollbar pb-4">
+                        ${items.map(item => `
+                            <a href="#/playlists/details/${item.slug}" class="w-[200px] shrink-0 cursor-pointer group flex flex-col">
+                                <div class="relative w-full aspect-square rounded-lg overflow-hidden mb-3 bg-[#ffffff1a]">
+                                    <img src="${item.thumbnails }" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" loading="lazy">
+                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                        <button class="w-12 h-12 bg-white rounded-full flex items-center justify-center hover:scale-110 shadow-lg"><svg class="w-6 h-6 text-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></button>
+                                    </div>
+                                </div>
+                                <h3 class="text-white font-bold text-[15px] truncate hover:underline" title="${item.title}">${item.title}</h3>
+                                <p class="text-[#909090] text-[14px] truncate mt-1">${Array.isArray(item.artists) ? item.artists.map(a => (typeof a === 'string' ? a : a.name)).join(', ') : 'Various Artists'}</p>
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>`;
+            }).join('');
+        } else {
+            htmlContent += '<p class="text-gray-500">Chưa có nội dung.</p>';
+        }
+
+        htmlContent += `</div>`;
+        container.innerHTML = htmlContent;
+
+        // 3. Gắn sự kiện Scroll cho thanh Moods trên cùng
+        const moodList = document.getElementById('mood-bar-list');
+        const btnP = document.getElementById('btn-p-moodlist');
+        const btnN = document.getElementById('btn-n-moodlist');
+        if(moodList && btnP && btnN) {
+             // Scroll tới mood đang chọn để người dùng thấy
+             const activeMood = moodList.querySelector('.bg-white');
+             if(activeMood) {
+                 moodList.scrollLeft = activeMood.offsetLeft - 20;
+             }
+
+             moodList.addEventListener('scroll', () => {
+                btnP.classList.toggle('hidden', moodList.scrollLeft <= 10);
+                btnP.classList.toggle('flex', moodList.scrollLeft > 10);
+             });
+             btnN.onclick = () => moodList.scrollBy({ left: 300, behavior: 'smooth' });
+             btnP.onclick = () => moodList.scrollBy({ left: -300, behavior: 'smooth' });
+        }
+
+        // 4. Gắn sự kiện Scroll cho từng section Playlist
+        sections.forEach((_, idx) => {
+            const row = document.getElementById(`scroll-mood-${idx}`);
+            const bP = document.getElementById(`btn-prev-mood-${idx}`);
+            const bN = document.getElementById(`btn-next-mood-${idx}`);
+            if(row && bP && bN) {
+                row.onscroll = () => bP.classList.toggle('hidden', row.scrollLeft <= 20) || bP.classList.toggle('flex', row.scrollLeft > 20);
+                bN.onclick = () => row.scrollBy({ left: row.clientWidth * 0.8, behavior: 'smooth' });
+                bP.onclick = () => row.scrollBy({ left: -row.clientWidth * 0.8, behavior: 'smooth' });
+            }
+        });
+
+    } catch (e) {
+        console.error("Lỗi tải Mood Detail:", e);
+        container.innerHTML = `<div class="text-red-500 text-center mt-10">Lỗi tải dữ liệu.</div>`;
+    }
+}
+
 // Events
 // CLICK BAR TO OPEN VIDEO
 if (els.infoArea) {

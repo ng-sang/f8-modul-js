@@ -9,7 +9,7 @@ import { renderQuickPicks, initQuickPicksLogic } from './components/quick-picks.
 import { renderExplore, initExploreLogic } from './components/explore.js';
 import { renderLogin, initLoginLogic } from './components/login.js';
 import { renderRegister, initRegisterLogic } from './components/register.js';
-import { mods, loadAlbumDetails, loadCategoryDetails, loadLineDetails, loadVideoDetails, loadSearchResults, loadState, loadSongDetails, loadNewReleases, loadMoodsAndGenres, loadCharts  } from './api.js';
+import { mods, loadAlbumDetails, loadCategoryDetails, loadLineDetails, loadVideoDetails, loadSearchResults, loadState, loadSongDetails, loadNewReleases, loadMoodsAndGenres, loadCharts, loadMoodDetail  } from './api.js';
 import { renderProfile, initProfileLogic, renderChangePassword, initChangePasswordLogic  } from './components/profile.js';
 
 export function initRouter() {
@@ -34,7 +34,7 @@ export function initRouter() {
       contentDiv.innerHTML = `
         <div class="max-w-[1200px] mx-auto pt-4 pb-20">
           
-          <!-- SỬA ĐOẠN NÀY: Thêm thẻ div bao quanh renderWelcome -->
+         
           <div id="welcome-wrapper">
              ${renderWelcome()}
           </div>
@@ -120,6 +120,11 @@ export function initRouter() {
      .on('/moods-and-genres', () => {
         contentDiv.innerHTML = `<div id="moods-genres-container" class="text-white p-4">Đang tải...</div>`;
         loadMoodsAndGenres();
+    })
+    .on('/moods/:slug', (match) => {
+        contentDiv.innerHTML = `<div id="mood-detail-container" class="text-white p-4">Đang tải mood...</div>`;
+        
+        loadMoodDetail(match.data.slug);
     })
     .notFound(() => { 
         contentDiv.innerHTML = `<h1 class="text-3xl font-bold mt-4 text-white p-4">404 - Không tìm thấy trang</h1>`; 

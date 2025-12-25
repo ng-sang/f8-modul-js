@@ -24,11 +24,12 @@ export async function initMoodsLogic() {
   try {
     const response = await fetch(`${API_BASE_URL}/moods`);
     const data = await response.json();
-   console.log(data);
-      moodList.innerHTML = data.map(mood => `
-        <a href="/categories/${mood.slug}" class="shrink-0 px-4 py-2 bg-[#ffffff1a] hover:bg-[#ffffff33] rounded-lg text-sm font-medium text-white transition whitespace-nowrap border border-transparent hover:border-[#ffffff1a] cursor-pointer">
+   
+      moodList.innerHTML = data.items.map(mood => `
+        <a href="/moods/${mood.slug}" class="shrink-0 px-4 py-2 bg-[#ffffff1a] hover:bg-[#ffffff33] rounded-lg text-sm font-medium text-white transition whitespace-nowrap border border-transparent hover:border-[#ffffff1a] cursor-pointer">
          ${mood.name}
         </a>`).join('');
+   
   } catch (error) { moodList.innerHTML = ''; }
 
   const handleScroll = () => {
